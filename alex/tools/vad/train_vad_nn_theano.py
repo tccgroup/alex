@@ -5,6 +5,7 @@ if __name__ == '__main__':
 
 import argparse
 import sys
+import os
 import numpy as np
 import datetime
 import random
@@ -183,13 +184,14 @@ def get_accuracy(true_y, predictions_y):
 
     return acc, sil
 
-def train_nn(speech_data, speech_alignment):
+def train_nn(speech_data, speech_alignment, pOut, doFeatureOnly=False):
     print
     print datetime.datetime.now()
     print
     random.seed(0)
     try:
         f = open(features_file_name, "rb")
+        print datetime.datetime.now(), "Loading features from file: %s" % features_file_name
         crossvalid_x = np.load(f) 
         crossvalid_y = np.load(f)
         train_x = np.load(f)
@@ -197,9 +199,13 @@ def train_nn(speech_data, speech_alignment):
         tx_m = np.load(f)
         tx_std = np.load(f)
         f.close()
-    except IOError:  
+    except IOError:
+        print datetime.datetime.now(), "Extracting features"
         crossvalid_x, crossvalid_y, train_x, train_y, tx_m, tx_std = gen_features(speech_data, speech_alignment)
-    
+
+    if doFeatureOnly:
+        return
+
     input_size = train_x.shape[1] * (prev_frames + 1 + next_frames)
 
     print "The shape of non-multiplied training data: ", train_x.shape, train_y.shape
@@ -277,8 +283,8 @@ def train_nn(speech_data, speech_alignment):
             print "Saving the FFNN and TFFN models"
             print
 
-            file_name = "model_voip/vad_nnt_%d_hu%d_hl%d_hla%d_pf%d_nf%d_acf_%.1f_mfr%d_mfl%d_mfps%d_ts%d_usec0%d_usedelta%d_useacc%d_mbo%d_bs%d" % \
-                                 (input_size, hidden_units, hidden_layers, hidden_layers_add,
+            file_name = "%s/vad_nnt_%d_hu%d_hl%d_hla%d_pf%d_nf%d_acf_%.1f_mfr%d_mfl%d_mfps%d_ts%d_usec0%d_usedelta%d_useacc%d_mbo%d_bs%d" % \
+                                 (pOut, input_size, hidden_units, hidden_layers, hidden_layers_add,
                                   prev_frames, next_frames, amplify_center_frame, max_frames, max_files, max_frames_per_segment,
                                   trim_segments,
                                   usec0, usedelta, useacc, mel_banks_only, batch_size)
@@ -364,6 +370,12 @@ def main():
     parser.add_argument('--weight_l2', action="store", default=weight_l2, type=float,
                         help='use weight L2 regularisation: default %d' % weight_l2)
 
+#    parser.add_argument('--audio-list', help='Audio input list', default=None)
+    parser.add_argument('--audiodir', help='Audio directory', required=True)
+    parser.add_argument('--mlf', help='Transcript (MLF) input list', required=True)
+    parser.add_argument('-o', '--outdir', help='Output directory', required=True)
+    parser.add_argument('--features-only', help='Features extraction only', action='store_true', default=False)
+
     args = parser.parse_args()
     sys.argv = []
 
@@ -387,26 +399,40 @@ def main():
     hidden_dropouts = args.hidden_dropouts
     weight_l2 = args.weight_l2
 
+#    fInAudioName = args.audio_list
+    pInAudio = args.audiodir
+    fInMLFName = args.mlf
+    pOut = args.outdir
+    doFeatureOnly = args.features_only
+
     # add all the training data
     train_speech = []
     train_speech_alignment = []
 
-    train_speech.append('data_voip_en/train/*.wav')
-    train_speech_alignment.append('model_voip_en/aligned_best.mlf')
+#    train_speech.append('/home/luca/Stuff/ALEX/audio/*.wav')
+#    train_speech_alignment.append('/home/luca/Stuff/ALEX/SERP.mlf')
 
-    train_speech.append('data_vad_sil/data/*.wav')
-    train_speech_alignment.append('data_vad_sil/vad-silence.mlf')
+#    train_speech.append('data_vad_sil/data/*.wav')
+#    train_speech_alignment.append('data_vad_sil/vad-silence.mlf')
 
-    train_speech.append('data_voip_cs/train/*.wav')
-    train_speech_alignment.append('model_voip_cs/aligned_best.mlf')
+#    train_speech.append('data_voip_cs/train/*.wav')
+#    train_speech_alignment.append('model_voip_cs/aligned_best.mlf')
 
-    features_file_name = "model_voip/vad_sds_mfcc_mfr%d_mfl%d_mfps%d_ts%d_usec0%d_usedelta%d_useacc%d_mbo%d.npc" % \
-                             (max_frames, max_files, max_frames_per_segment, trim_segments,
+
+    if pInAudio is not None:
+        train_speech.append('%s/*.wav' % pInAudio)
+
+
+    if fInMLFName is not None:
+        train_speech_alignment.append(fInMLFName)
+
+    features_file_name = "%s/vad_sds_mfcc_mfr%d_mfl%d_mfps%d_ts%d_usec0%d_usedelta%d_useacc%d_mbo%d.npc" % \
+                             (pOut, max_frames, max_files, max_frames_per_segment, trim_segments,
                               usec0, usedelta, useacc, mel_banks_only)
 
     print datetime.datetime.now()
 
-    train_nn(train_speech, train_speech_alignment)
+    train_nn(train_speech, train_speech_alignment, pOut, doFeatureOnly=doFeatureOnly)
 
     print datetime.datetime.now()
 
