@@ -278,21 +278,21 @@ def train_nn(speech_data, speech_alignment, pOut, doFeatureOnly=False):
         print datetime.datetime.now()
         print
 
-        if epoch == np.argmax(dc_acc):
-            print
-            print "Saving the FFNN and TFFN models"
-            print
+#        if epoch == np.argmax(dc_acc):
+        print
+        print "Saving the FFNN and TFFN models"
+        print
 
-            file_name = "%s/vad_nnt_%d_hu%d_hl%d_hla%d_pf%d_nf%d_acf_%.1f_mfr%d_mfl%d_mfps%d_ts%d_usec0%d_usedelta%d_useacc%d_mbo%d_bs%d" % \
-                                 (pOut, input_size, hidden_units, hidden_layers, hidden_layers_add,
-                                  prev_frames, next_frames, amplify_center_frame, max_frames, max_files, max_frames_per_segment,
-                                  trim_segments,
-                                  usec0, usedelta, useacc, mel_banks_only, batch_size)
-            nn = ffnn.FFNN()
-            for w, b in [e.params[n:n+2] for n in range(0, len(e.params), 2)]:
-                nn.add_layer(w.get_value(), b.get_value())
-            nn.set_input_norm(tx_m, tx_std)
-            nn.save(file_name+".ffnn")
+        file_name = "%s/vad_nnt_%d_hu%d_hl%d_hla%d_pf%d_nf%d_acf_%.1f_mfr%d_mfl%d_mfps%d_ts%d_usec0%d_usedelta%d_useacc%d_mbo%d_bs%d_epoch%d" % \
+                             (pOut, input_size, hidden_units, hidden_layers, hidden_layers_add,
+                              prev_frames, next_frames, amplify_center_frame, max_frames, max_files, max_frames_per_segment,
+                              trim_segments,
+                              usec0, usedelta, useacc, mel_banks_only, batch_size, epoch)
+        nn = ffnn.FFNN()
+        for w, b in [e.params[n:n+2] for n in range(0, len(e.params), 2)]:
+            nn.add_layer(w.get_value(), b.get_value())
+        nn.set_input_norm(tx_m, tx_std)
+        nn.save(file_name+".ffnn")
 
             e.save(file_name+".tffnn")
 
