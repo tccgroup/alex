@@ -297,7 +297,7 @@ def train_nn(speech_data, speech_alignment, pOut, doFeatureOnly=False):
         nn.set_input_norm(tx_m, tx_std)
         nn.save(file_name+".ffnn")
 
-            e.save(file_name+".tffnn")
+        e.save(file_name+".tffnn")
 
         if epoch == max_epoch:
             break
