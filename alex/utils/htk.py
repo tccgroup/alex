@@ -449,6 +449,6 @@ class MLFMFCCOnlineAlignedArray(MLFFeaturesAlignedArray):
             mfcc_params = self.mfcc_front_end.param(frame)
         except ValueError:
             print file_name, frame_id, len(frame)
-            raise
+            mfcc_params = None
             
         return mfcc_params

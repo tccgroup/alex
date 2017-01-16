@@ -116,6 +116,9 @@ def gen_features(speech_data, speech_alignment):
     samplingC = 0
     for frame, label in vta:
         # downcast
+        if frame is None:
+            continue
+
         frame = frame.astype(np.float32)
     #        frame = frame - (10.0 if mel_banks_only else 0.0)
 
