@@ -128,7 +128,7 @@ class TheanoFFNN(object):
         for p, g in zip(self.params, g_loss):
             updates.append((p, p + learning_rate * g))
 
-        self.f_train_ret_loss = function([x, true_y, learning_rate], loss, updates = updates)
+        self.f_train_ret_loss = function([x, true_y, learning_rate], loss, updates = updates, allow_input_downcast=True)
 
         # GPU data multiplications, it appears that this version is not faster compared to the CPU version
 #        self.shared_training_set_x = theano.shared(training_set_x, 'training_set_x')
