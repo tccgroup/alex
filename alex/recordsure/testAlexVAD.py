@@ -1,7 +1,16 @@
 #!/usr/bin/env python
 
-import sys
 import os
+import matplotlib
+
+if 'DISPLAY' in os.environ:
+    force_save = False
+else:
+    matplotlib.use('Agg')
+    force_save = True
+
+
+import sys
 import argparse
 from StringIO import StringIO
 #import librosa
@@ -122,6 +131,7 @@ if __name__ == "__main__":
 #    parser.add_argument('-l','--list', help='Input list of audio files.', default=None)
     parser.add_argument('-o','--outdir', help='Output directory', required=True)
     parser.add_argument('--plot', help='Plot results', default=False, action='store_true')
+    parser.add_argument('--save', help='Save figure instead of plot to screen.', default=False, action='store_true')
     parser.add_argument('--keep-mlf', help='Keep temporary mlf file', default=False, action='store_true')
     
 #    parser.add_argument('--logdir', help='Log file(s) directory path. Log file will contain all the parsing warnings and some transcript stats.', nargs='?', const=True, default=None)
@@ -136,7 +146,8 @@ if __name__ == "__main__":
     fInModelName = args.model
 #    fInListName = args.list
     pOut = args.outdir
-    doPlot = args.plot
+    plot_fig = args.plot
+    save_fig = args.save
     keep_mlf = args.keep_mlf
 
 #    window = mediumTermeWindow()
@@ -159,8 +170,16 @@ if __name__ == "__main__":
 
         predictions_y = test_model(features, fInModelName, pOut, ID=fName)
 
-        if doPlot is not False:
+        if plot_fig is not False:
+            fig = plt.figure()
+
             plt.plot(predictions_y[:,0], 'r')
             plt.plot(predictions_y[:,1], 'b')
-            plt.show()
+
+            if force_save is True or save_fig is True:
+                fPNGMLFName = os.path.join(pOut, fName + ".png")
+                fig.savefig(fPNGMLFName)
+
+            else:
+                plt.show()
 
