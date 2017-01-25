@@ -58,7 +58,7 @@ def tmp_mlf(fInAudioName, pOut):
     return fOutMLFName
 
 
-def extractFeatures(fInAudioName, keep_mlf=False):
+def extractFeatures(fInInputName, keep_mlf=False, max_frames=10000000):
 
     next_frames = 15
     prev_frames = 15
@@ -68,35 +68,39 @@ def extractFeatures(fInAudioName, keep_mlf=False):
     useacc=False
     mel_banks_only=1
 
-    fOutMLFName = tmp_mlf(fInAudioName, pOut)
-    length = lsdutils.audioLength(fInAudioName)
-    mlf = train.load_mlf(fOutMLFName, 1, 1+int(length*100))
-
     vta = htk.MLFMFCCOnlineAlignedArray(usec0=usec0,n_last_frames=0, usedelta = usedelta, useacc = useacc, mel_banks_only = mel_banks_only)
+
+    if fInInputName.endswith('.wav'):
+        fOutMLFName = tmp_mlf(fInInputName, pOut)
+        length = lsdutils.audioLength(fInInputName)
+        mlf = train.load_mlf(fOutMLFName, 1, 1+int(length*100))
+
+        pIn = os.path.dirname(fInAudioName)
+        vta.append_trn(os.path.join(pIn, '*.wav'))
+
+    elif fInInputName.endswith('.mlf'):
+        mlf = train.load_mlf(fInInputName, 1000000, max_frames)
+
     vta.append_mlf(mlf)
 
-    pIn = os.path.dirname(fInAudioName)
-    vta.append_trn(os.path.join(pIn, '*.wav'))
+#    mfcc = vta.__iter__().next()
 
-    mfcc = vta.__iter__().next()
-
-    test_x = np.array([frame for frame, _ in vta]).astype(np.float32)
-
-    if keep_mlf is False:
+    if keep_mlf is False and os.path.isfile(fOutMLFName):
         os.remove(fOutMLFName)
 
-    return test_x
+    test_x = np.array([frame for frame, _ in vta]).astype(np.float32)
+    label_x = np.array([label for _, label in vta])
+
+    return test_x, label_x
 
 
-def saveFeatures(fOutFeatureName, features):
+def saveFeatures(fOutFeatureName, (features, labels) ):
 
-#    fOutFeatureName = os.path.join(pOut, "mao.npy")
     print 'Saving data to:', fOutFeatureName
-#    features, mlf = feats
-#    fName = lsdutils.getFileBasename(fInAudioName)
+
     with open(fOutFeatureName, 'wb') as fOutFeature:
         np.save(fOutFeature, features, allow_pickle=False)
-#        np.save(fOutFeature, mlf, allow_pickle=False)
+        np.save(fOutFeature, labels, allow_pickle=False)
 
 
 def test_model(features, fInModelName, pOut, ID=None):
@@ -154,21 +158,25 @@ if __name__ == "__main__":
 
     fName = lsdutils.getFileBasename(fInInputName)
 
-    if fInInputName.endswith('.wav') :
-        features = extractFeatures(fInInputName, keep_mlf=keep_mlf)
+    if fInInputName.endswith('.wav') or fInInputName.endswith('.mlf'):
+        features, labels = extractFeatures(fInInputName, keep_mlf=keep_mlf)
 
         fOutMLFName = os.path.join(pOut, fName + ".dnnfeats")
-        saveFeatures(fOutMLFName, features)
+        saveFeatures(fOutMLFName, (features, labels))
 
     elif fInInputName.endswith('.dnnfeats'):
         with open(fInInputName, 'rb') as fInInput:
             features = np.load(fInInput)
+            labels = np.load(fInInput)
 
     print features.shape
 
     if fInModelName is not None:
 
         predictions_y = test_model(features, fInModelName, pOut, ID=fName)
+        acc, sil = train.get_accuracy(labels, predictions_y)
+
+        print "ACC: {}, SIL: {}".format(acc, sil)
 
         if plot_fig is not False:
             fig = plt.figure()
