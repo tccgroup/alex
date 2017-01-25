@@ -87,7 +87,7 @@ def extractFeatures(fInInputName, keep_mlf=False, max_frames=10000000):
 
 #    mfcc = vta.__iter__().next()
 
-    if keep_mlf is False and os.path.isfile(fOutMLFName):
+    if keep_mlf is False and fOutMLFName is not None:
         os.remove(fOutMLFName)
 
     test_x = np.array([frame for frame, _ in vta]).astype(np.float32)
