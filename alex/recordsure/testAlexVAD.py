@@ -19,6 +19,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 pathToAdd = os.path.join(os.path.dirname(sys.argv[0]), "../../../experiments/share/")
+pathToAdd = os.path.join(os.path.dirname(sys.argv[0]), "../../../experiments-master-live/share/")
 sys.path.append(pathToAdd)
 
 from lsdpylib import phraselib
