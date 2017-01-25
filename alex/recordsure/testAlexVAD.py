@@ -80,6 +80,7 @@ def extractFeatures(fInInputName, keep_mlf=False, max_frames=10000000):
         vta.append_trn(os.path.join(pIn, '*.wav'))
 
     elif fInInputName.endswith('.mlf'):
+        fOutMLFName = None
         mlf = train.load_mlf(fInInputName, 1000000, max_frames)
 
     vta.append_mlf(mlf)
